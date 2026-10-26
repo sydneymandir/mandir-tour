@@ -1,6 +1,6 @@
 // Saves the tour on the visitor's phone the first time it opens,
 // so every later visit works with no signal at all.
-const CACHE = 'mandir-tour-v9';           // bump this when content changes
+const CACHE = 'mandir-tour-v10';           // bump this when content changes
 const CORE  = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './hero.webp'];
 // sharper zoom map and stop photos: fetched in the background, never block the tour
 const EXTRA = ['./campus-map-zoom.webp',
