@@ -1,6 +1,6 @@
 // Saves the tour on the visitor's phone the first time it opens,
 // so every later visit works with no signal at all.
-const CACHE = 'mandir-tour-v6';           // bump this when content changes
+const CACHE = 'mandir-tour-v7';           // bump this when content changes
 const CORE  = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './hero.webp'];
 // sharper zoom map and stop photos: fetched in the background, never block the tour
 const EXTRA = ['./campus-map-zoom.webp',
@@ -13,7 +13,7 @@ self.addEventListener('install', e => {
   }).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('mandir-tour-') && k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 // Cache first (instant, works offline), then refresh the copy quietly when signal allows.
