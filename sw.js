@@ -1,6 +1,6 @@
 // Saves the tour on the visitor's phone the first time it opens,
 // so every later visit works with no signal at all.
-const CACHE = 'mandir-tour-v7';           // bump this when content changes
+const CACHE = 'mandir-tour-v8';           // bump this when content changes
 const CORE  = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './hero.webp'];
 // sharper zoom map and stop photos: fetched in the background, never block the tour
 const EXTRA = ['./campus-map-zoom.webp',
@@ -16,12 +16,20 @@ self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('mandir-tour-') && k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
-// Cache first (instant, works offline), then refresh the copy quietly when signal allows.
+// The page itself: try the network first (up to 3 s) so updates show straight away,
+// otherwise use the saved copy. Photos and the map: saved copy first (instant, works offline).
+const fromNet = (c, req, ms) => new Promise(res => {
+  const t = ms ? setTimeout(() => res(null), ms) : 0;
+  fetch(req).then(r => { if (r && r.ok) c.put(req, r.clone()); clearTimeout(t); res(r); }).catch(() => { clearTimeout(t); res(null); });
+});
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(caches.open(CACHE).then(async c => {
+    if (e.request.mode === 'navigate') {
+      return (await fromNet(c, e.request, 3000)) || (await c.match(e.request, { ignoreSearch: true })) || (await c.match('./index.html')) || (await c.match('./')) || Response.error();
+    }
     const hit = await c.match(e.request, { ignoreSearch: true });
-    const net = fetch(e.request).then(r => { if (r && (r.ok || r.type === 'opaque')) c.put(e.request, r.clone()); return r; }).catch(() => null);
-    return hit || (await net) || (e.request.mode === 'navigate' ? c.match('./index.html') : Response.error());
+    if (hit) { fromNet(c, e.request); return hit; }
+    return (await fromNet(c, e.request)) || Response.error();
   }));
 });
