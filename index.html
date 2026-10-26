@@ -166,6 +166,46 @@ ol.stops li button:focus-visible{outline:3px solid var(--saffron)}
 .langlist button{width:100%;min-height:64px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 20px;border-radius:16px;border:1.5px solid var(--line);background:var(--paper);font-size:1.3rem;font-weight:600;text-align:left}
 .langlist button[aria-current="true"]{border-color:var(--maroon);box-shadow:inset 0 0 0 1.5px var(--maroon)}
 .langlist small{font-size:.8rem;font-weight:600;color:var(--muted);letter-spacing:.08em}
+/* ===== Phone-friendly additions: full-screen map, thumb bars, tap feedback ===== */
+button,a,.pin{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.mapopen{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:none}
+.mapopen svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mapscroll img{cursor:zoom-in}
+.fsui{display:none}
+.fslock,.fslock body{overflow:hidden;overscroll-behavior:none}
+.mapwrap.fs{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;background:#26232e}
+.mapwrap.fs .mapscroll{flex:1;display:flex;overflow:auto;border:0;touch-action:pan-x pan-y;overscroll-behavior:contain;scroll-behavior:auto;background:#26232e}
+.mapwrap.fs .mapinner{height:var(--fsh,500px);margin:auto;flex:none}
+.mapwrap.fs .mapscroll img{cursor:grab}
+.mapwrap.fs .compass{top:calc(env(safe-area-inset-top,0px) + 64px);right:max(12px,env(safe-area-inset-right,0px))}
+.mapwrap.fs .fsui{display:block}
+.fsbar{position:absolute;left:0;right:0;top:0;z-index:3;display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-right,0px)) 8px max(10px,env(safe-area-inset-left,0px));background:linear-gradient(rgba(20,17,30,.82),rgba(20,17,30,0));pointer-events:none}
+.fsbar>*{pointer-events:auto}
+.fsbtn{width:48px;height:48px;border-radius:50%;border:0;background:rgba(255,255,255,.96);color:#1E1A2B;display:grid;place-items:center;box-shadow:0 2px 8px rgba(0,0,0,.35);flex:none}
+.fsbtn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+.fsbtn:active{transform:scale(.94)}
+.fsbar .fstitle{color:#fff;font-weight:800;font-size:1rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.fszoom{position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:3;display:grid;gap:10px}
+.fscard[hidden]{display:none!important}
+.fscard{position:absolute;left:max(10px,env(safe-area-inset-left,0px));right:calc(max(12px,env(safe-area-inset-right,0px)) + 60px);bottom:calc(env(safe-area-inset-bottom,0px) + 14px);z-index:3;border-radius:16px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;box-shadow:0 6px 24px rgba(0,0,0,.45)}
+.fscard h3{font-size:1.05rem;margin:0}
+.fscard p{margin:2px 0 6px;font-size:.88rem}
+.fshint{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 76px);transform:translateX(-50%);z-index:2;width:max-content;max-width:calc(100% - 120px);text-align:center;background:rgba(20,17,30,.82);color:#fff;font-size:.8rem;line-height:1.35;padding:6px 12px;border-radius:14px;pointer-events:none;transition:opacity .6s}
+.fshint.gone{opacity:0}
+.mapwrap.fs .chip{font-size:.78rem}
+@media (prefers-reduced-motion:reduce){.fshint{transition:none}}
+
+/* tour: thumb bar on the home screen, tap feedback */
+#homeView{padding-bottom:88px}
+.homebar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--paper);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:0 -4px 16px rgba(0,0,0,.06)}
+.homebar .wrap{display:grid;grid-template-columns:auto 1fr;gap:10px;padding-block:10px}
+.homebar .primary{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:48px;padding:0 16px}
+.btn:active,.iconbtn:active,.langbtn:active,ol.stops li button:active{transform:scale(.97)}
+.minimap{cursor:zoom-in}
+.mapwrap.fs .route{stroke-width:4}
+.mapwrap.fs .pin.p{width:30px;height:30px}
+@media (max-width:360px){header.top h1{font-size:1.05rem}.iconbtn,.langbtn{min-width:42px}}
+@media (max-width:440px){.homebar .mapopen span{display:none}.homebar .mapopen{padding:0 14px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 @media (min-width:900px){.mapscroll{border-radius:0}}
 </style>
@@ -205,7 +245,7 @@ ol.stops li button:focus-visible{outline:3px solid var(--saffron)}
 
   <div class="wrap mapbar">
     <span class="eyebrow" data-t="mapLabel">Campus map · scroll sideways</span>
-    <button class="btn" id="zoomBtn" style="min-height:40px;padding:0 1em;white-space:nowrap;flex:none">Zoom in</button>
+    <button class="btn" id="zoomBtn" hidden>Zoom in</button><button class="btn mapopen" style="min-height:40px;padding:0 1em"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span data-t="fullMap">Full map</span></button>
   </div>
   <div class="mapwrap">
   <div class="mapscroll" id="mapScroll">
@@ -218,6 +258,11 @@ ol.stops li button:focus-visible{outline:3px solid var(--saffron)}
     </div>
   </div>
   <div class="compass" aria-hidden="true"><svg viewBox="0 0 30 30"><g transform="rotate(20 15 15)"><path d="M15 3 20 17H10z" fill="#6E1B26"/><path d="M15 27 20 17H10z" fill="#B9B1A8"/><text x="15" y="16.5" text-anchor="middle" font-size="7" font-weight="700" fill="#fff" font-family="system-ui,sans-serif">N</text></g></svg></div>
+  <div class="fsui">
+    <div class="fsbar"><button class="fsbtn fsclose" aria-label="Close map"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button><span class="fstitle" data-t="title"></span></div>
+    <div class="fszoom"><button class="fsbtn fsin" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button class="fsbtn fsout" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button></div>
+    <div class="fshint gone" data-t="fsHint"></div>
+  </div>
 </div>
   <div class="wrap legend">
     <span><i class="sw" style="background:#B5461A"></i><span data-t="lgStop">Tour stop</span></span>
@@ -252,6 +297,10 @@ ol.stops li button:focus-visible{outline:3px solid var(--saffron)}
     <ul class="rules" id="rules"></ul>
   </section>
   <p class="wrap note" id="footNote"></p>
+  <div class="homebar"><div class="wrap">
+    <button class="btn mapopen" aria-label="Map"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg><span data-t="fullMap">Full map</span></button>
+    <button class="btn primary" id="contBtn" data-t="start">Start the tour</button>
+  </div></div>
 </main>
 
 <main id="stopView" hidden>
@@ -298,7 +347,7 @@ en:{
     eyebrow:"Self-guided tour", welcome:"Welcome. Walk the campus at your own pace.",
     intro:"Follow the numbered stops on the map. Each stop explains what you are looking at and how to reach the next one. Tap <b>Listen</b> on any stop to hear it read aloud.",
     stops:"{n} stops", about:"About {m} min", offlineNote:"Works without signal once loaded",
-    start:"Start the tour", mapLabel:"Campus map · scroll sideways", zoomIn:"Zoom in", zoomOut:"Zoom out",
+    start:"Start the tour", mapLabel:"Campus map", fullMap:"Full map", fsHint:"Pinch or double-tap to zoom", cont:"Continue: {t}", zoomIn:"Zoom in", zoomOut:"Zoom out",
     mapAlt:"Aerial view of the Mandir campus, entry gate on the left, Mandir in the centre, main car park on the right",
     nogo:"No public access<br>Construction zone",
     lgStop:"Tour stop", lgVisited:"Visited", lgParking:"Parking", lgGate:"Entry gate",
@@ -372,7 +421,7 @@ hi:{
     eyebrow:"स्वयं-निर्देशित भ्रमण", welcome:"स्वागत है। अपनी गति से परिसर का भ्रमण करें।",
     intro:"मानचित्र पर क्रमांकित स्थानों का अनुसरण करें। हर स्थान पर बताया गया है कि आप क्या देख रहे हैं और अगले स्थान तक कैसे पहुँचें। किसी भी स्थान की जानकारी सुनने के लिए <b>सुनें</b> दबाएँ।",
     stops:"{n} स्थान", about:"लगभग {m} मिनट", offlineNote:"एक बार खुलने के बाद बिना नेटवर्क के भी चलता है",
-    start:"भ्रमण शुरू करें", mapLabel:"परिसर का मानचित्र · दाएँ-बाएँ खिसकाएँ", zoomIn:"बड़ा करें", zoomOut:"छोटा करें",
+    start:"भ्रमण शुरू करें", mapLabel:"परिसर का मानचित्र", fullMap:"पूरा मानचित्र", fsHint:"ज़ूम के लिए दो उँगलियों से फैलाएँ या दो बार टैप करें", cont:"जारी रखें: {t}", zoomIn:"बड़ा करें", zoomOut:"छोटा करें",
     mapAlt:"मंदिर परिसर का हवाई दृश्य",
     nogo:"आम जनता का प्रवेश निषेध<br>निर्माण क्षेत्र",
     lgStop:"भ्रमण स्थान", lgVisited:"देख लिया", lgParking:"पार्किंग", lgGate:"प्रवेश द्वार",
@@ -446,7 +495,7 @@ gu:{
     eyebrow:"સ્વ-માર્ગદર્શિત પ્રવાસ", welcome:"આપનું સ્વાગત છે. આપની અનુકૂળતા મુજબ પરિસરમાં ફરો.",
     intro:"નકશા પરનાં ક્રમાંકિત સ્થાનોને અનુસરો. દરેક સ્થાને આપ શું જોઈ રહ્યા છો અને આગળના સ્થાને કેવી રીતે પહોંચવું તે સમજાવ્યું છે. કોઈ પણ સ્થાનની માહિતી સાંભળવા <b>સાંભળો</b> દબાવો.",
     stops:"{n} સ્થાન", about:"આશરે {m} મિનિટ", offlineNote:"એક વાર ખૂલ્યા પછી નેટવર્ક વગર પણ ચાલે છે",
-    start:"પ્રવાસ શરૂ કરો", mapLabel:"પરિસરનો નકશો · બાજુમાં સરકાવો", zoomIn:"મોટું કરો", zoomOut:"નાનું કરો",
+    start:"પ્રવાસ શરૂ કરો", mapLabel:"પરિસરનો નકશો", fullMap:"આખો નકશો", fsHint:"ઝૂમ કરવા બે આંગળીથી પહોળું કરો અથવા બે વાર ટૅપ કરો", cont:"આગળ વધો: {t}", zoomIn:"મોટું કરો", zoomOut:"નાનું કરો",
     mapAlt:"મંદિર પરિસરનું હવાઈ દૃશ્ય",
     nogo:"જાહેર પ્રવેશ નિષેધ<br>બાંધકામ વિસ્તાર",
     lgStop:"પ્રવાસ સ્થાન", lgVisited:"જોયેલું", lgParking:"પાર્કિંગ", lgGate:"પ્રવેશ દ્વાર",
@@ -520,7 +569,7 @@ ne:{
     eyebrow:"स्व-निर्देशित भ्रमण", welcome:"स्वागत छ। आफ्नै गतिमा परिसर घुम्नुहोस्।",
     intro:"नक्सामा क्रमाङ्कित स्थानहरू पछ्याउनुहोस्। हरेक स्थानमा तपाईं के हेर्दै हुनुहुन्छ र अर्को स्थानसम्म कसरी पुग्ने भनेर बताइएको छ। कुनै पनि स्थानको जानकारी सुन्न <b>सुन्नुहोस्</b> थिच्नुहोस्।",
     stops:"{n} स्थान", about:"करिब {m} मिनेट", offlineNote:"एक पटक खुलेपछि नेटवर्कबिना पनि चल्छ",
-    start:"भ्रमण सुरु गर्नुहोस्", mapLabel:"परिसरको नक्सा · दायाँ-बायाँ सार्नुहोस्", zoomIn:"ठूलो पार्नुहोस्", zoomOut:"सानो पार्नुहोस्",
+    start:"भ्रमण सुरु गर्नुहोस्", mapLabel:"परिसरको नक्सा", fullMap:"पूरा नक्सा", fsHint:"जुम गर्न दुई औँलाले फैलाउनुहोस् वा दुई पटक ट्याप गर्नुहोस्", cont:"जारी राख्नुहोस्: {t}", zoomIn:"ठूलो पार्नुहोस्", zoomOut:"सानो पार्नुहोस्",
     mapAlt:"मन्दिर परिसरको हवाई दृश्य",
     nogo:"सार्वजनिक प्रवेश निषेध<br>निर्माण क्षेत्र",
     lgStop:"भ्रमण स्थान", lgVisited:"हेरिसकेको", lgParking:"पार्किङ", lgGate:"प्रवेशद्वार",
@@ -681,7 +730,7 @@ function buildMap(){
       b.dataset.id=s.id;
       b.style.left=(x/MAPW*100)+"%"; b.style.top=(y/MAPH*100)+"%";
       b.innerHTML=`${labelOf(s)}${s.kind==="p"||s.kind==="g"?"":`<span class="chip ${s.chip||""}"></span>`}`;
-      b.onclick=()=>go(s.id);
+      b.onclick=()=>{if(FS.on)fsExit(true);go(s.id)};
       map.appendChild(b);
     });
   });
@@ -748,11 +797,13 @@ function refreshVisited(){
   const n=TOUR.stops.filter(s=>visited.has(s.id)).length;
   $("progText").textContent=ui("progText",{n:n,t:TOUR.stops.length});
   $("progBar").style.width=(n/TOUR.stops.length*100)+"%";
+  const nx=TOUR.stops.find(x=>!visited.has(x.id)), cb=$("contBtn");
+  if(cb){ cb.textContent=(n&&nx)?ui("cont",{t:place(nx.id).title}):ui("start"); cb.onclick=()=>go((nx||TOUR.stops[0]).id) }
 }
 
 function go(id,fromHash,keepScroll){
   const s=ALL.find(x=>x.id===id); if(!s){home();return}
-  stopSpeech();
+  stopSpeech(); window.__keepAwake=true; keepAwake();
   current=s;
   visited.add(s.id); store.set("tour.visited",[...visited]);
   const p=place(s.id);
@@ -793,11 +844,7 @@ function home(finished){
   if(finished) document.querySelector(".progress").scrollIntoView({block:"center"});
 }
 function showOnMap(){
-  const s=current; home();
-  const sc=$("mapScroll"), map=$("map");
-  const x=s.pins[0][0]/MAPW*map.clientWidth;
-  sc.scrollLeft=x-sc.clientWidth/2;
-  sc.scrollIntoView({block:"center"});
+  const s=current; home(); fsEnter(s.pins[0]);
   const p=document.querySelector(`.pin[data-id="${s.id}"]`); p&&p.focus({preventScroll:true});
 }
 
@@ -859,13 +906,73 @@ $("textBtn").onclick=()=>{big=!big;store.set("tour.big",big);applyBig()};
 function net(){const on=navigator.onLine;$("net").textContent=ui(on?"ready":"offline");$("net").classList.toggle("off",!on)}
 document.addEventListener("visibilitychange",()=>{ if(document.hidden) return; const before=EVENTS.map(e=>e.id).join(); computeEvents(); if(EVENTS.map(e=>e.id).join()!==before){ ALL=[...SEQ,...EVENTS]; buildMap(); applyLang(); if(current&&!ALL.includes(current)) home() } });
 addEventListener("online",net); addEventListener("offline",net);
-addEventListener("popstate",()=>{const id=location.hash.slice(1); id?go(id,true):home()});
+addEventListener("popstate",()=>{if(fsPop())return; const id=location.hash.slice(1); id?go(id,true):home()});
 addEventListener("hashchange",()=>{const id=location.hash.slice(1); if(id&&(!current||current.id!==id))go(id,true)});
 
 /* Save the whole tour on the phone for offline use (works once hosted on its own website) */
 if("serviceWorker" in navigator && location.protocol==="https:"){
   try{navigator.serviceWorker.register("sw.js").catch(()=>{})}catch(e){}
 }
+
+/* ===== Full-screen map: drag to move, pinch / double-tap / + − to zoom, phone Back closes it ===== */
+const FS={on:false,h:0,skipPop:false};
+const mapWrap=document.querySelector(".mapwrap"), mapSc=$("mapScroll");
+let wakeLock=null;
+async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>{wakeLock=null})}}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&(FS.on||window.__keepAwake))keepAwake()});
+function fsBounds(){const vw=mapSc.clientWidth||innerWidth, vh=mapSc.clientHeight||innerHeight;return{vw,vh,min:Math.min(vh,vw*MAPH/MAPW),max:MAPH}}
+function fsZoomImg(){if(zoomLoaded)return;const img=$("mapImg"),z=new Image();z.onload=()=>{img.src=z.src;zoomLoaded=true};z.src=img.dataset.zoom}
+function setFsH(h,fx,fy){
+  const b=fsBounds(); h=Math.max(b.min,Math.min(b.max,h));
+  const old=FS.h||h, k=h/old, sl=mapSc.scrollLeft, st=mapSc.scrollTop;
+  fx=fx??b.vw/2; fy=fy??b.vh/2;
+  FS.h=h; mapWrap.style.setProperty("--fsh",h+"px");
+  mapSc.scrollLeft=(sl+fx)*k-fx; mapSc.scrollTop=(st+fy)*k-fy;
+  $("map").classList.toggle("zoomed",h>=420);
+  if(h>460) fsZoomImg();
+}
+function fsCenter(x,y){const m=$("map");mapSc.scrollLeft=x/MAPW*m.clientWidth-mapSc.clientWidth/2;mapSc.scrollTop=y/MAPH*m.clientHeight-mapSc.clientHeight/2}
+function fsEnter(pt){
+  if(FS.on) return;
+  const m=$("map"), rx=pt?pt[0]:(mapSc.scrollLeft+mapSc.clientWidth/2)/m.clientWidth*MAPW, ry=pt?pt[1]:MAPH/2;
+  FS.on=true; FS.h=0; mapWrap.classList.add("fs"); document.documentElement.classList.add("fslock");
+  try{history.pushState({fs:1},"")}catch(e){}
+  setFsH(fsBounds().vh*(pt?1.25:1)); fsCenter(rx,ry);
+  const hint=mapWrap.querySelector(".fshint"); if(hint){hint.classList.remove("gone");clearTimeout(FS.ht);FS.ht=setTimeout(()=>hint.classList.add("gone"),3500)}
+  if(typeof fsOnEnter==="function") fsOnEnter();
+  keepAwake();
+}
+function fsExit(fromPop){
+  if(!FS.on) return;
+  const m=$("map"), rx=(mapSc.scrollLeft+mapSc.clientWidth/2)/m.clientWidth;
+  FS.on=false; mapWrap.classList.remove("fs"); document.documentElement.classList.remove("fslock");
+  $("map").classList.toggle("zoomed",typeof zoomed!=="undefined"&&zoomed);
+  mapSc.scrollTop=0; mapSc.scrollLeft=rx*m.clientWidth-mapSc.clientWidth/2;
+  if(typeof fsOnExit==="function") fsOnExit();
+  if(!fromPop){FS.skipPop=true;try{history.back()}catch(e){FS.skipPop=false}}
+}
+function fsPop(){if(FS.skipPop){FS.skipPop=false;return true} if(FS.on){fsExit(true);return true} return false}
+/* pinch to zoom (two fingers); one-finger drag is the phone's own smooth scrolling */
+let pz=null;
+mapSc.addEventListener("touchstart",e=>{if(FS.on&&e.touches.length===2){const[a,b]=e.touches;pz={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)||1,h:FS.h}}},{passive:true});
+mapSc.addEventListener("touchmove",e=>{if(!pz||e.touches.length!==2)return;e.preventDefault();const[a,b]=e.touches,r=mapSc.getBoundingClientRect();setFsH(pz.h*Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)/pz.d,(a.clientX+b.clientX)/2-r.left,(a.clientY+b.clientY)/2-r.top)},{passive:false});
+mapSc.addEventListener("touchend",e=>{if(e.touches.length<2)pz=null},{passive:true});
+mapSc.addEventListener("wheel",e=>{if(!FS.on||!e.ctrlKey)return;e.preventDefault();const r=mapSc.getBoundingClientRect();setFsH(FS.h*Math.exp(-e.deltaY*.01),e.clientX-r.left,e.clientY-r.top)},{passive:false});
+mapSc.addEventListener("dblclick",e=>{if(!FS.on||e.target.closest(".pin"))return;const r=mapSc.getBoundingClientRect();setFsH(FS.h*1.8,e.clientX-r.left,e.clientY-r.top)});
+$("mapImg").addEventListener("click",e=>{if(!FS.on){const m=$("map").getBoundingClientRect();fsEnter([(e.clientX-m.left)/m.width*MAPW,(e.clientY-m.top)/m.height*MAPH])}});
+mapWrap.querySelector(".fsclose").onclick=()=>fsExit();
+mapWrap.querySelector(".fsin").onclick=()=>setFsH(FS.h*1.5);
+mapWrap.querySelector(".fsout").onclick=()=>setFsH(FS.h/1.5);
+document.querySelectorAll(".mapopen").forEach(b=>b.onclick=()=>fsEnter());
+document.addEventListener("keydown",e=>{if(FS.on&&e.key==="Escape")fsExit()});
+addEventListener("resize",()=>{if(FS.on)setFsH(FS.h)});
+
+/* swipe left / right on a stop page for the next / previous stop */
+let sw0=null;
+$("stopView").addEventListener("touchstart",e=>{sw0=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now()}:null},{passive:true});
+$("stopView").addEventListener("touchend",e=>{if(!sw0)return;const t=e.changedTouches[0],dx=t.clientX-sw0.x,dy=t.clientY-sw0.y,quick=Date.now()-sw0.t<700;sw0=null;
+  if(quick&&Math.abs(dx)>70&&Math.abs(dy)<Math.abs(dx)*.5){const b=dx<0?$("nextBtn"):$("prevBtn");if(!b.disabled)b.click()}},{passive:true});
+$("minimap").onclick=showOnMap;
 
 /* start: first-time visitors choose a language; QR codes at each location open #stop1, #stop2 … straight to that stop */
 buildMap();
