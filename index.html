@@ -358,7 +358,7 @@ en:{
     arrive:"When you arrive", tourStops:"Tour stops", remember:"Please remember", min:"{m} min",
     stopOf:"Stop {i} of {t}", howTo:"How to get here", listen:"▶ Listen", stop:"■ Stop",
     showMap:"Show on map", back:"‹ Back", next:"Next: {t} ›", nextPlain:"Next ›", finish:"Finish ›",
-    noSpeech:"Read-aloud is not available on this phone", noVoice:"This phone has no English voice installed",
+    noSpeech:"Read-aloud is not available on this phone", noVoice:"Voice not saved yet. Connect to the internet once.",
     bigger:"Larger text", smaller:"Smaller text", lang:"Language", todayOnly:"Today only", heroCap:"The Tapomurti and the Mandir from above", backToTour:"Back to the tour ›"
   },
   places:{
@@ -432,7 +432,7 @@ hi:{
     arrive:"पहुँचने पर", tourStops:"भ्रमण के स्थान", remember:"कृपया ध्यान दें", min:"{m} मिनट",
     stopOf:"स्थान {i} / {t}", howTo:"यहाँ कैसे पहुँचें", listen:"▶ सुनें", stop:"■ रोकें",
     showMap:"मानचित्र पर देखें", back:"‹ पीछे", next:"आगे: {t} ›", nextPlain:"आगे ›", finish:"समाप्त ›",
-    noSpeech:"इस फ़ोन पर सुनने की सुविधा उपलब्ध नहीं है", noVoice:"इस फ़ोन में हिंदी आवाज़ उपलब्ध नहीं है",
+    noSpeech:"इस फ़ोन पर सुनने की सुविधा उपलब्ध नहीं है", noVoice:"आवाज़ अभी सहेजी नहीं गई। एक बार इंटरनेट से जुड़ें।",
     bigger:"बड़े अक्षर", smaller:"छोटे अक्षर", lang:"भाषा", todayOnly:"केवल आज", heroCap:"ऊपर से तपोमूर्ति और मंदिर", backToTour:"भ्रमण पर वापस ›"
   },
   places:{
@@ -506,7 +506,7 @@ gu:{
     arrive:"પહોંચો ત્યારે", tourStops:"પ્રવાસનાં સ્થાનો", remember:"કૃપા કરી ધ્યાન રાખો", min:"{m} મિનિટ",
     stopOf:"સ્થાન {i} / {t}", howTo:"અહીં કેવી રીતે પહોંચવું", listen:"▶ સાંભળો", stop:"■ બંધ કરો",
     showMap:"નકશા પર જુઓ", back:"‹ પાછળ", next:"આગળ: {t} ›", nextPlain:"આગળ ›", finish:"પૂર્ણ ›",
-    noSpeech:"આ ફોન પર સાંભળવાની સુવિધા ઉપલબ્ધ નથી", noVoice:"આ ફોનમાં ગુજરાતી અવાજ ઉપલબ્ધ નથી",
+    noSpeech:"આ ફોન પર સાંભળવાની સુવિધા ઉપલબ્ધ નથી", noVoice:"અવાજ હજી સચવાયો નથી. એકવાર ઇન્ટરનેટથી જોડાઓ.",
     bigger:"મોટા અક્ષર", smaller:"નાના અક્ષર", lang:"ભાષા", todayOnly:"ફક્ત આજે", heroCap:"ઉપરથી તપોમૂર્તિ અને મંદિર", backToTour:"પ્રવાસ પર પાછા ›"
   },
   places:{
@@ -580,7 +580,7 @@ ne:{
     arrive:"आइपुगेपछि", tourStops:"भ्रमणका स्थानहरू", remember:"कृपया ध्यान दिनुहोस्", min:"{m} मिनेट",
     stopOf:"स्थान {i} / {t}", howTo:"यहाँ कसरी पुग्ने", listen:"▶ सुन्नुहोस्", stop:"■ रोक्नुहोस्",
     showMap:"नक्सामा हेर्नुहोस्", back:"‹ पछाडि", next:"अर्को: {t} ›", nextPlain:"अर्को ›", finish:"समाप्त ›",
-    noSpeech:"यो फोनमा सुन्ने सुविधा उपलब्ध छैन", noVoice:"यो फोनमा नेपाली आवाज उपलब्ध छैन",
+    noSpeech:"यो फोनमा सुन्ने सुविधा उपलब्ध छैन", noVoice:"आवाज अझै सुरक्षित भएन। एक पटक इन्टरनेट जोड्नुहोस्।",
     bigger:"ठूला अक्षर", smaller:"साना अक्षर", lang:"भाषा", todayOnly:"आज मात्र", heroCap:"माथिबाट तपोमूर्ति र मन्दिर", backToTour:"भ्रमणमा फर्कनुहोस् ›"
   },
   places:{
@@ -747,6 +747,7 @@ function buildMap(){
 
 /* everything that shows words is redrawn here when the language changes */
 function applyLang(){
+  try{preloadVoice()}catch(e){}
   const meta=LANGS.find(l=>l.code===lang)||LANGS[0];
   document.documentElement.lang=meta.code;
   document.title=ui("title");
@@ -851,38 +852,51 @@ function showOnMap(){
   const p=document.querySelector(`.pin[data-id="${s.id}"]`); p&&p.focus({preventScroll:true});
 }
 
-/* read aloud in the chosen language, using the phone's own voices (no audio download) */
-let speaking=false;
-function pickVoice(){
-  const meta=LANGS.find(l=>l.code===lang)||LANGS[0];
-  const vs=speechSynthesis.getVoices();
-  for(const want of meta.speech){
-    const v=vs.find(v=>v.lang.replace("_","-").toLowerCase()===want.toLowerCase())||vs.find(v=>v.lang.toLowerCase().startsWith(want.toLowerCase()));
-    if(v) return {voice:v, none:false};
-  }
-  return {voice:null, none:vs.length>0};
+/* ===== Recorded male voice: the same natural voice on every phone, works offline once saved =====
+   Each Listen text is pre-recorded as audio/<lang>/<hash>.mp3 (hash of the exact text).
+   Played from a blob so iPhones also play it from the offline copy. */
+const VOICE={a:null,url:null,token:0};
+function vnorm(s){return String(s).replace(/\s+/g," ").trim()}
+function vhash(s){s=vnorm(s);let h=0x811c9dc5;for(const ch of s){h^=ch.codePointAt(0);h=Math.imul(h,16777619)>>>0}return h.toString(36)}
+function voiceUrl(text){return "audio/"+lang+"/"+vhash(text)+".mp3"}
+function stopVoice(){VOICE.token++;if(VOICE.a){try{VOICE.a.pause()}catch(e){}VOICE.a=null}if(VOICE.url){URL.revokeObjectURL(VOICE.url);VOICE.url=null}}
+async function playVoice(text,onend){
+  stopVoice(); const my=VOICE.token;
+  try{
+    const r=await fetch(voiceUrl(text)); if(!r.ok) throw 0;
+    const b=await r.blob(); if(my!==VOICE.token) return;
+    VOICE.url=URL.createObjectURL(b); const a=new Audio(VOICE.url); VOICE.a=a;
+    a.onended=()=>{if(my===VOICE.token){stopVoice();onend(null)}};
+    a.onerror=()=>{if(my===VOICE.token){stopVoice();onend("err")}};
+    await a.play();
+  }catch(e){ if(my===VOICE.token){stopVoice();onend("err")} }
 }
-function stopSpeech(){try{speechSynthesis.cancel()}catch(e){} speaking=false; const b=$("listenBtn"); b.textContent=ui("listen"); b.setAttribute("aria-pressed","false")}
-function listen(){
-  if(!("speechSynthesis" in window)){ $("listenBtn").textContent=ui("noSpeech"); return }
-  if(speaking){stopSpeech();return}
-  const meta=LANGS.find(l=>l.code===lang)||LANGS[0];
-  const pv=pickVoice();
-  if(pv.none){ $("listenBtn").textContent=ui("noVoice"); return }
-  const p=place(current.id);
+/* save this language's recordings in the background, so Listen works with no signal */
+let voicePre={};
+function preloadVoice(){
+  if(!lang||voicePre[lang]||!navigator.onLine) return; voicePre[lang]=1; const L0=lang;
+  const go=async()=>{try{
+    const m=await (await fetch("audio/manifest.json")).json(); const list=m[L0]||[];
+    for(const h of list){ try{await fetch("audio/"+L0+"/"+h+".mp3")}catch(e){} await new Promise(r=>setTimeout(r,150)) }
+  }catch(e){voicePre[L0]=0}};
+  (window.requestIdleCallback||((f)=>setTimeout(f,2500)))(go);
+}
+
+let speaking=false;
+function listenText(id){
+  const p=place(id||current.id);
   const stop=lang==="en"?".":"।";
   const end=t=>/[.।?!]$/.test(t.trim())?t:t+stop;
   const parts=[end(p.title), end(p.sub), end(ui("howTo"))+" "+p.find,
     ...p.body.filter(b=>b[0]!=="tag").map(([t,v])=>t==="ul"?v.map(end).join(" "):end(plain(v)))];
-  const u=new SpeechSynthesisUtterance(parts.join(" "));
-  u.lang=pv.voice?pv.voice.lang:meta.speech[0];
-  if(pv.voice) u.voice=pv.voice;
-  u.rate=.95;
-  u.onend=u.onerror=()=>stopSpeech();
-  speechSynthesis.speak(u); speaking=true;
-  $("listenBtn").textContent=ui("stop"); $("listenBtn").setAttribute("aria-pressed","true");
+  return vnorm(parts.join(" "));
 }
-try{speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
+function stopSpeech(){stopVoice(); speaking=false; const b=$("listenBtn"); b.textContent=ui("listen"); b.setAttribute("aria-pressed","false")}
+function listen(){
+  if(speaking){stopSpeech();return}
+  const b=$("listenBtn"); speaking=true; b.textContent=ui("stop"); b.setAttribute("aria-pressed","true");
+  playVoice(listenText(),err=>{speaking=false; b.textContent=err?ui("noVoice"):ui("listen"); b.setAttribute("aria-pressed","false")});
+}
 
 /* controls */
 $("startBtn").onclick=()=>go(TOUR.stops[0].id);
