@@ -54,6 +54,13 @@ header.top .blogo{height:38px;width:auto;flex:none;margin-right:-2px}
 @media (max-width:380px){header.top .blogo{height:32px}header.top .wrap{gap:8px}}
 header.top h1{font-size:1.2rem;flex:1;min-width:0;color:var(--maroon);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .iconbtn{min-width:44px;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--paper);font-weight:700}
+.iconbtn.music{display:inline-grid;place-items:center;color:var(--maroon)}
+.iconbtn.music svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.iconbtn.music[aria-pressed="true"]{background:var(--maroon);color:#fff;border-color:var(--maroon)}
+.iconbtn.music[aria-pressed="true"] .x{display:none}
+.iconbtn.music.playing svg{animation:mpulse 2.4s ease-in-out infinite}
+@keyframes mpulse{50%{transform:scale(1.12)}}
+@media (prefers-reduced-motion:reduce){.iconbtn.music.playing svg{animation:none}}
 .net{font-size:.75rem;color:var(--muted);white-space:nowrap}
 @media (max-width:420px){.net{font-size:0}.net::before{margin:0}}
 .net::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--done);margin-right:6px;vertical-align:1px}
@@ -207,6 +214,7 @@ button,a,.pin{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .mapwrap.fs .route{stroke-width:4}
 .mapwrap.fs .pin.p{width:30px;height:30px}
 @media (max-width:360px){header.top h1{font-size:1.05rem}.iconbtn,.langbtn{min-width:42px}}
+@media (max-width:430px){header.top .net{display:none}header.top .wrap{gap:6px}.iconbtn,.langbtn{min-width:40px;min-height:40px}.langbtn{padding:0 8px}header.top h1{font-size:1.08rem}}
 @media (max-width:440px){.homebar .mapopen span{display:none}.homebar .mapopen{padding:0 14px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 @media (min-width:900px){.mapscroll{border-radius:0}}
@@ -221,6 +229,7 @@ button,a,.pin{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   <h1 id="homeTitle" data-t="title">Mandir Campus Tour</h1>
   <span class="net" id="net">Ready offline</span>
   <button class="langbtn" id="langBtn" aria-label="Language"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span id="langShort">EN</span></button>
+  <button class="iconbtn music" id="musicBtn" aria-label="Background music" aria-pressed="false" title="Background music"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/><path class="x" d="M3 3l18 18"/></svg></button>
   <button class="iconbtn" id="textBtn" aria-label="Larger text" title="Larger text">A+</button>
 </div></header>
 
@@ -891,12 +900,44 @@ function listenText(id){
     ...p.body.filter(b=>b[0]!=="tag").map(([t,v])=>t==="ul"?v.map(end).join(" "):end(plain(v)))];
   return vnorm(parts.join(" "));
 }
-function stopSpeech(){stopVoice(); speaking=false; const b=$("listenBtn"); b.textContent=ui("listen"); b.setAttribute("aria-pressed","false")}
+function stopSpeech(){stopVoice(); speaking=false; try{musicDuck(false)}catch(e){} const b=$("listenBtn"); b.textContent=ui("listen"); b.setAttribute("aria-pressed","false")}
 function listen(){
   if(speaking){stopSpeech();return}
-  const b=$("listenBtn"); speaking=true; b.textContent=ui("stop"); b.setAttribute("aria-pressed","true");
-  playVoice(listenText(),err=>{speaking=false; b.textContent=err?ui("noVoice"):ui("listen"); b.setAttribute("aria-pressed","false")});
+  const b=$("listenBtn"); speaking=true; b.textContent=ui("stop"); b.setAttribute("aria-pressed","true"); musicDuck(true);
+  playVoice(listenText(),err=>{speaking=false; musicDuck(false); b.textContent=err?ui("noVoice"):ui("listen"); b.setAttribute("aria-pressed","false")});
 }
+
+/* ===== Soft background music ("Divine Footprints", instrumental) =====
+   Phones only allow sound after a tap, so it fades in on the visitor's first tap anywhere.
+   Plays quietly on a seamless loop, dips under the Listen voice, pauses when the phone is locked
+   or another app is opened, and the music button turns it off or on (remembered on the phone). */
+const MUSIC={src:"music/divine-footprints.m4a",vol:.16,duck:.04,lead:.5,len:140,ctx:null,gain:null,buf:null,node:null,loading:null};
+let musicOn=store.get("tour.music",true);
+function musicUI(){const b=$("musicBtn");b.setAttribute("aria-pressed",String(musicOn));b.classList.toggle("playing",musicOn&&!!MUSIC.node&&MUSIC.ctx&&MUSIC.ctx.state==="running")}
+function musicLoad(){
+  if(!MUSIC.loading) MUSIC.loading=fetch(MUSIC.src).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(b=>new Promise((res,rej)=>MUSIC.ctx.decodeAudioData(b,res,rej))).then(buf=>MUSIC.buf=buf).catch(()=>{MUSIC.loading=null});
+  return MUSIC.loading;
+}
+function musicFade(v,t){const g=MUSIC.gain,now=MUSIC.ctx.currentTime;g.gain.cancelScheduledValues(now);g.gain.setValueAtTime(g.gain.value,now);g.gain.linearRampToValueAtTime(v,now+t)}
+async function musicStart(){
+  if(!musicOn) return;
+  try{
+    if(!MUSIC.ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;MUSIC.ctx=new AC();MUSIC.gain=MUSIC.ctx.createGain();MUSIC.gain.gain.value=0;MUSIC.gain.connect(MUSIC.ctx.destination)}
+    if(MUSIC.ctx.state!=="running") await MUSIC.ctx.resume();
+    if(!MUSIC.node){
+      await musicLoad(); if(!MUSIC.buf||!musicOn||MUSIC.node) return;
+      const n=MUSIC.ctx.createBufferSource(); n.buffer=MUSIC.buf; n.loop=true; n.loopStart=MUSIC.lead; n.loopEnd=MUSIC.lead+MUSIC.len;
+      n.connect(MUSIC.gain); n.start(0,MUSIC.lead); MUSIC.node=n;
+    }
+    musicFade(speaking?MUSIC.duck:MUSIC.vol,3); musicUI();
+  }catch(e){}
+}
+function musicStop(){ if(!MUSIC.ctx) return; musicFade(0,.8); setTimeout(()=>{if(!musicOn&&MUSIC.ctx)MUSIC.ctx.suspend().then(musicUI)},900); }
+function musicDuck(on){ if(MUSIC.ctx&&MUSIC.node&&musicOn) musicFade(on?MUSIC.duck:MUSIC.vol,on?.4:1.5) }
+$("musicBtn").addEventListener("click",e=>{e.stopPropagation();musicOn=!musicOn;store.set("tour.music",musicOn);if(musicOn)musicStart();else musicStop();musicUI()});
+["pointerdown","keydown","touchend"].forEach(ev=>addEventListener(ev,function first(){if(musicOn&&!MUSIC.node)musicStart()},{passive:true}));
+document.addEventListener("visibilitychange",()=>{if(!MUSIC.ctx)return; if(document.hidden)MUSIC.ctx.suspend(); else if(musicOn&&MUSIC.node)MUSIC.ctx.resume().then(()=>{musicFade(MUSIC.vol,2);musicUI()})});
+musicUI();
 
 /* controls */
 $("startBtn").onclick=()=>go(TOUR.stops[0].id);
